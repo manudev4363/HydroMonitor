@@ -20,3 +20,32 @@ async def get_stations(department_code: str = "43"):
     data = response.json()
 
     return data.get("data", [])
+
+
+async def get_observations(
+    station_code: str,
+    grandeur_hydro: str = "H,Q",
+    size: int = 100
+):
+    """
+    Récupère les observations hydrométriques
+    d'une station depuis Hub'Eau.
+    """
+
+    url = f"{HUBEAU_BASE_URL}/observations_tr"
+
+    params = {
+        "code_entite": station_code,
+        "grandeur_hydro": grandeur_hydro,
+        "sort": "desc",
+        "size": size,
+        "format": "json"
+    }
+
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        response = await client.get(url, params=params)
+        response.raise_for_status()
+
+    data = response.json()
+
+    return data.get("data", [])

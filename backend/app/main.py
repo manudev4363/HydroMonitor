@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.routes import stations
+from app.api.routes import stations, observations
 
 app = FastAPI(
     title="HydroMonitor API",
@@ -9,6 +9,11 @@ app = FastAPI(
 
 app.include_router(
     stations.router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    observations.router,
     prefix="/api/v1"
 )
 

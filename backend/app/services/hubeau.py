@@ -22,13 +22,14 @@ async def get_stations(department_code: str = "43"):
     return data.get("data", [])
 
 
+
 async def get_observations(
     station_code: str,
     grandeur_hydro: str = "H,Q",
     size: int = 100
 ):
     """
-    Récupère les observations hydrométriques
+    Récupère toutes les pages d'observations hydrométriques
     d'une station depuis Hub'Eau.
     """
 
@@ -42,10 +43,36 @@ async def get_observations(
         "format": "json"
     }
 
-    async with httpx.AsyncClient(timeout=20.0) as client:
-        response = await client.get(url, params=params)
-        response.raise_for_status()
+    observations = []
 
-    data = response.json()
+    async with httpx.AsyncClient(timeout=30.0) as client:
 
-    return data.get("data", [])
+        while url:
+
+            response = await client.get(
+                url,
+                params=params
+            )
+
+            try:
+                response.raise_for_status()
+
+            except httpx.HTTPStatusError as e:
+                raise RuntimeError(
+                    f"Erreur Hub'Eau HTTP {e.response.status_code} "
+                    f"pour la station {station_code}. "
+                    f"Réponse : {e.response.text[:1000]}"
+                ) from e
+
+            data = response.json()
+
+            # Ajout des observations de la page actuelle
+            observations.extend(data.get("data", []))
+
+            # Récupération de l'URL de la page suivante
+            url = data.get("next")
+
+            # Les paramètres sont déjà présents dans l'URL suivante
+            params = None
+
+    return observations

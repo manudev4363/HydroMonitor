@@ -226,3 +226,68 @@ def get_latest_observation_dates() -> dict:
             else None
             for station_code, latest_timestamp in results
         }
+
+def get_observations_by_station(
+    station_code: str,
+    grandeur_hydro: str = "H,Q",
+    size: int = 100,
+    offset: int = 0
+) -> list:
+    """
+    Récupère les observations d'une station depuis PostgreSQL.
+    """
+
+    with SessionLocal() as db:
+
+        station = db.scalar(
+            select(Station).where(
+                Station.code == station_code
+            )
+        )
+
+        if station is None:
+            raise ValueError(
+                f"Station inconnue : {station_code}"
+            )
+
+        grandeurs = grandeur_hydro.split(",")
+
+        observations = db.scalars(
+            select(ObservationModel)
+            .where(
+                ObservationModel.station_id == station.id,
+                ObservationModel.measurement_type.in_(grandeurs)
+            )
+            .order_by(
+                ObservationModel.timestamp.desc()
+            )
+            .limit(size)
+            .offset(offset)
+        ).all()
+
+        total = db.scalar(
+            select(func.count(ObservationModel.id))
+            .where(
+                ObservationModel.station_id == station.id,
+                ObservationModel.measurement_type.in_(grandeurs)
+            )
+        )
+
+        return {
+            "station_code": station.code,
+            "total": total,
+            "size": size,
+            "offset": offset,
+            "observations": [
+                ObservationSchema(
+                    station_code=station.code,
+                    site_code=item.site_code,
+                    grandeur=item.measurement_type,
+                    observed_at=item.timestamp,
+                    value=item.result,
+                    method=item.method,
+                    qualification=item.qualification
+                )
+                for item in observations
+            ]
+        }

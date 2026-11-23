@@ -49,3 +49,15 @@ class Observation(BaseModel):
     def unit(self) -> str:
         """Unité de la mesure selon sa grandeur."""
         return "mm" if self.grandeur == "H" else "l/s"
+
+
+class ObservationPaginated(BaseModel):
+    """
+    Réponse paginée des observations hydrométriques.
+    """
+
+    station_code: str
+    total: int
+    size: int
+    offset: int
+    observations: list[Observation]

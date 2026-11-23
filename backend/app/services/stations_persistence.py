@@ -4,6 +4,16 @@ from sqlalchemy import select
 from app.db.database import SessionLocal
 from app.models.station import Station
 
+def get_all_stations():
+    """
+    Récupère toutes les stations depuis PostgreSQL.
+    """
+
+    with SessionLocal() as db:
+        return db.scalars(
+            select(Station).order_by(Station.name)
+        ).all()
+
 
 def save_stations(stations: list) -> dict:
     """

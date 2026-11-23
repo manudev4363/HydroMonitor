@@ -8,7 +8,8 @@ class Station(BaseModel):
     """
 
     model_config = ConfigDict(
-        populate_by_name=True
+        populate_by_name=True,
+        from_attributes=True
     )
 
     code: str = Field(alias="code_station")

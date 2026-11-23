@@ -1,8 +1,12 @@
+
 from fastapi import APIRouter, HTTPException
 import httpx
 
 from app.services.hubeau import get_stations
-from app.services.stations_persistence import save_stations
+from app.services.stations_persistence import (
+    get_all_stations,
+    save_stations
+)
 from app.schemas.station import Station
 
 router = APIRouter(
@@ -10,28 +14,19 @@ router = APIRouter(
     tags=["Stations hydrométriques"]
 )
 
+
 @router.get(
-    "", 
+    "",
     response_model=list[Station],
     response_model_by_alias=False
 )
-async def list_stations(department_code: str = "43"):
-    """Retourne les stations hydrométriques du département de la Haute-Loire"""
-    try:
-        raw_stations = await get_stations(department_code)
+async def list_stations():
+    """
+    Retourne les stations enregistrées dans PostgreSQL.
+    """
 
-        stations = [
-            Station.model_validate(item)
-            for item in raw_stations
-        ]
+    return get_all_stations()
 
-        return stations
-    
-    except httpx.HTTPError as error:
-        raise HTTPException (
-            status_code=502,
-            detail=f"Erreur lors de la communication avec l'APi Hub'Eau : {error}"
-        )
 
 @router.post("/import")
 async def import_stations(department_code: str = "43"):
@@ -62,4 +57,3 @@ async def import_stations(department_code: str = "43"):
             status_code=502,
             detail=f"Erreur Hub'Eau : {error}"
         )
-

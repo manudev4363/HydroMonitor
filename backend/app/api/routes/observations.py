@@ -4,8 +4,14 @@ import httpx
 from fastapi import APIRouter, HTTPException, Query
 
 from app.services.hubeau import get_observations
-from app.services.observation_persistence import save_observations
-from app.schemas.observation import Observation
+from app.services.observation_persistence import (
+    save_observations,
+    get_observations_by_station
+)
+from app.schemas.observation import (
+    Observation,
+    ObservationPaginated
+)
 from app.services.observation_import import import_all_observations
 
 
@@ -17,7 +23,7 @@ router = APIRouter(
 
 @router.get(
     "/{station_code}/observations",
-    response_model=list[Observation],
+    response_model=ObservationPaginated,
     response_model_by_alias=False
 )
 async def list_observations(
@@ -26,29 +32,26 @@ async def list_observations(
         default="H,Q",
         pattern="^(H|Q|H,Q|Q,H)$"
     ),
-    size: int = Query(default=100, ge=1, le=200)
+    size: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0)
 ):
     """
     Retourne les observations hydrométriques
-    d'une station.
+    d'une station depuis PostgreSQL.
     """
 
     try:
-        raw_observations = await get_observations(
+        return get_observations_by_station(
             station_code=station_code,
             grandeur_hydro=grandeur_hydro,
-            size=size
+            size=size,
+            offset=offset
         )
 
-        return [
-            Observation.model_validate(item)
-            for item in raw_observations
-        ]
-
-    except httpx.HTTPError as error:
+    except ValueError as error:
         raise HTTPException(
-            status_code=502,
-            detail=f"Erreur Hub'Eau : {error}"
+            status_code=404,
+            detail=str(error)
         )
 
 @router.post("/{station_code}/observations/import")

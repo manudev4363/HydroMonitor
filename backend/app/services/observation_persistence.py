@@ -1,5 +1,5 @@
 
-from sqlalchemy import select, tuple_
+from sqlalchemy import select, tuple_, func
 from datetime import timezone
 
 from app.db.database import SessionLocal
@@ -193,3 +193,36 @@ def normalize_datetime(value):
         )
 
     return value.astimezone(timezone.utc)
+
+def get_latest_observation_dates() -> dict:
+    """
+    Retourne la dernière date d'observation
+    enregistrée pour chaque station.
+
+    Résultat :
+    {
+        "K004551001": datetime(...),
+        "K004552001": datetime(...),
+    }
+    """
+
+    with SessionLocal() as db:
+
+        results = db.execute(
+            select(
+                Station.code,
+                func.max(ObservationModel.timestamp)
+            )
+            .outerjoin(
+                ObservationModel,
+                Station.id == ObservationModel.station_id
+            )
+            .group_by(Station.code)
+        ).all()
+
+        return {
+            station_code: normalize_datetime(latest_timestamp)
+            if latest_timestamp is not None
+            else None
+            for station_code, latest_timestamp in results
+        }

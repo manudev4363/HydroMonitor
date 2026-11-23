@@ -26,7 +26,8 @@ async def get_stations(department_code: str = "43"):
 async def get_observations(
     station_code: str,
     grandeur_hydro: str = "H,Q",
-    size: int = 100
+    size: int = 100,
+    date_debut_obs: str | None = None
 ):
     """
     Récupère toutes les pages d'observations hydrométriques
@@ -42,6 +43,9 @@ async def get_observations(
         "size": size,
         "format": "json"
     }
+
+    if date_debut_obs is not None:
+        params["date_debut_obs"] = date_debut_obs
 
     observations = []
 

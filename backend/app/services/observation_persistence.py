@@ -1,6 +1,6 @@
 
 from sqlalchemy import select, tuple_, func
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 
 from app.db.database import SessionLocal
 from app.models.station import Station
@@ -291,3 +291,44 @@ def get_observations_by_station(
                 for item in observations
             ]
         }
+
+def get_observation_statistics() -> dict:
+    """
+    Retourne les statistiques globales des observations stockées.
+    """
+
+    with SessionLocal() as db:
+
+        total = db.scalar(
+            select(func.count()).select_from(ObservationModel)
+        ) or 0
+
+        latest = db.scalar(
+            select(func.max(ObservationModel.timestamp))
+        )
+
+        return {
+            "total_observations": total,
+            "last_observation_at": latest
+        }
+
+def get_observations_last_24h() -> int:
+    """
+    Retourne le nombre d'observations enregistrées
+    au cours des dernières 24 heures.
+    """
+
+    now = datetime.now(timezone.utc)
+    last_24h = now - timedelta(hours=24)
+
+    with SessionLocal() as db:
+
+        total = db.scalar(
+            select(func.count())
+            .select_from(ObservationModel)
+            .where(
+                ObservationModel.timestamp >= last_24h
+            )
+        )
+
+        return total or 0

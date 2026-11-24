@@ -44,3 +44,30 @@ export async function getObservationsByStation(
 
   return response.data.observations
 }
+
+export interface ObservationStatistics {
+  total_observations: number
+  last_observation_at: string | null
+  
+}
+
+export interface ObservationLast24h {
+  observations_last_24h: number
+}
+
+export async function getObservationLast24h(): Promise<ObservationLast24h> {
+  const response = await api.get<ObservationLast24h>(
+    '/stations/observations/statistics/last-24h'
+  )
+
+  return response.data
+}
+
+export async function getObservationStatistics(): Promise<ObservationStatistics> {
+  const response = await api.get<ObservationStatistics>(
+    '/stations/observations/statistics'
+  )
+
+  return response.data
+}
+

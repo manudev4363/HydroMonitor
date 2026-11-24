@@ -6,7 +6,9 @@ from fastapi import APIRouter, HTTPException, Query
 from app.services.hubeau import get_observations
 from app.services.observation_persistence import (
     save_observations,
-    get_observations_by_station
+    get_observations_by_station,
+    get_observation_statistics,
+    get_observations_last_24h
 )
 from app.schemas.observation import (
     Observation,
@@ -115,3 +117,22 @@ async def import_all_stations_observations():
             status_code=502,
             detail=f"Erreur Hub'Eau : {error}"
         )
+
+@router.get("/observations/statistics")
+async def get_global_observation_statistics():
+    """
+    Retourne les statistiques globales
+    des observations enregistrées dans PostgreSQL.
+    """
+
+    return get_observation_statistics()
+
+@router.get("/observations/statistics/last-24h")
+async def get_last_24h_observations():
+    """
+    Retourne le nombre d'observations enregistrées
+    au cours des dernières 24 heures.
+    """
+    return {
+        "observations_last_24h": get_observations_last_24h()
+    }
